@@ -200,7 +200,10 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dims = [input_dim] + hidden_dims + [num_classes]
+        for i in range(self.num_layers):
+            self.params['W' + str(i + 1)] = weight_scale * np.random.randn(dims[i], dims[i + 1])
+            self.params['b' + str(i + 1)] = np.zeros(dims[i + 1])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -263,7 +266,18 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        caches = []
+        x = X
+        for i in range(self.num_layers):
+            W = self.params['W' + str(i + 1)]
+            b = self.params['b' + str(i + 1)]
+            x, cache = affine_forward(x, W, b)
+            caches.append(cache)
+            if i != self.num_layers - 1:
+                x, cache = relu_forward(x)
+                caches.append(cache)
+
+        scores = x
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -290,7 +304,23 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dsoftmax = softmax_loss(scores, y)
+
+        dx = dsoftmax
+        for i in range(self.num_layers):
+            Wparam = "W" + str(self.num_layers - i)
+            W = self.params[Wparam]
+
+            loss += 0.5 * self.reg * np.sum(W * W)
+            grads[Wparam] = self.reg * W
+
+            if i != 0:
+                dx = relu_backward(dx, caches.pop())
+
+            dx, dW, db = affine_backward(dx, caches.pop())
+
+            grads[Wparam] += dW
+            grads["b" + str(self.num_layers - i)] = db
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
